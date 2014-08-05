@@ -15,7 +15,8 @@ static const CGFloat labelPadding = 10;
 // Private
 @interface MWCaptionView () {
     id <MWPhoto> _photo;
-    UILabel *_label;    
+    UILabel *_label;
+    UILabel *_timeAdressLabel;
 }
 @end
 
@@ -44,7 +45,7 @@ static const CGFloat labelPadding = 10;
             UIGraphicsEndImageContext();
             [self setBackgroundImage:image forToolbarPosition:UIBarPositionAny barMetrics:UIBarMetricsDefault];
         }
-        self.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
+        self.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
         [self setupCaption];
     }
     return self;
@@ -53,6 +54,23 @@ static const CGFloat labelPadding = 10;
 - (CGSize)sizeThatFits:(CGSize)size {
     CGFloat maxHeight = 9999;
     if (_label.numberOfLines > 0) maxHeight = _label.font.leading*_label.numberOfLines;
+    
+    CGSize timeAddressSize;
+    if ([NSString instancesRespondToSelector:@selector(boundingRectWithSize:options:attributes:context:)]) {
+        timeAddressSize = [_timeAdressLabel.text boundingRectWithSize:CGSizeMake(size.width - labelPadding*2, maxHeight)
+                                             options:NSStringDrawingUsesLineFragmentOrigin
+                                          attributes:@{NSFontAttributeName:_timeAdressLabel.font}
+                                             context:nil].size;
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        timeAddressSize = [_timeAdressLabel.text sizeWithFont:_timeAdressLabel.font
+                           constrainedToSize:CGSizeMake(size.width - labelPadding*2, maxHeight)
+                               lineBreakMode:_timeAdressLabel.lineBreakMode];
+#pragma clang diagnostic pop
+    }
+    
+    
     CGSize textSize;
     if ([NSString instancesRespondToSelector:@selector(boundingRectWithSize:options:attributes:context:)]) {
         textSize = [_label.text boundingRectWithSize:CGSizeMake(size.width - labelPadding*2, maxHeight)
@@ -67,40 +85,90 @@ static const CGFloat labelPadding = 10;
                                lineBreakMode:_label.lineBreakMode];
 #pragma clang diagnostic pop
     }
-    return CGSizeMake(size.width, textSize.height + labelPadding * 2);
+    
+    CGFloat height = timeAddressSize.height > 0 ? (labelPadding + timeAddressSize.height) : 0;
+    height += textSize.height ? textSize.height + labelPadding : 0;
+    height += height == 0 ? 0 : labelPadding;
+    
+    return CGSizeMake(size.width, height);
 }
 
 - (void)setupCaption {
-    _label = [[UILabel alloc] initWithFrame:CGRectIntegral(CGRectMake(labelPadding, 0,
-                                                       self.bounds.size.width-labelPadding*2,
-                                                       self.bounds.size.height))];
-    _label.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+    
+    _timeAdressLabel = [[UILabel alloc] initWithFrame:CGRectMake(labelPadding, labelPadding,
+                                                                               self.bounds.size.width-labelPadding*2,
+                                                                                [UIFont systemFontOfSize:12].pointSize)];
+    _timeAdressLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    _timeAdressLabel.opaque = NO;
+    _timeAdressLabel.backgroundColor = [UIColor clearColor];
+    if (SYSTEM_VERSION_LESS_THAN(@"6")) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        _timeAdressLabel.textAlignment = UITextAlignmentLeft;
+        _timeAdressLabel.lineBreakMode = UILineBreakModeWordWrap;
+#pragma clang diagnostic pop
+    } else {
+        _timeAdressLabel.textAlignment = NSTextAlignmentLeft;
+        _timeAdressLabel.lineBreakMode = NSLineBreakByWordWrapping;
+    }
+    
+    _timeAdressLabel.numberOfLines = 1;
+    _timeAdressLabel.textColor = [UIColor whiteColor];
+    if (SYSTEM_VERSION_LESS_THAN(@"7")) {
+        // Shadow on 6 and below
+        _timeAdressLabel.shadowColor = [UIColor blackColor];
+        _timeAdressLabel.shadowOffset = CGSizeMake(1, 1);
+    }
+    _timeAdressLabel.font = [UIFont systemFontOfSize:12];
+    
+    NSMutableString *timeAddress = [NSMutableString stringWithString:(_photo.timeString.length ? [NSString stringWithFormat:@"🕒%@", _photo.timeString] : @"")];
+    
+    if (_photo.address.length) {
+        [timeAddress appendString:[NSString stringWithFormat:@"    📍%@", _photo.address]];
+    }
+    
+    _timeAdressLabel.text = timeAddress;
+    [self addSubview:_timeAdressLabel];
+    [_timeAdressLabel sizeToFit];
+    
+    if (timeAddress.length) {
+        _label = [[UILabel alloc] initWithFrame:CGRectMake(labelPadding, CGRectGetMaxY(_timeAdressLabel.frame) +labelPadding,
+                                                           self.bounds.size.width-labelPadding*2,
+                                                           self.bounds.size.height)];
+        _label.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleBottomMargin;
+    } else {
+        _label = [[UILabel alloc] initWithFrame:CGRectMake(labelPadding, labelPadding,
+                                                           self.bounds.size.width-labelPadding*2,
+                                                           self.bounds.size.height)];
+        _label.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    }
     _label.opaque = NO;
     _label.backgroundColor = [UIColor clearColor];
     if (SYSTEM_VERSION_LESS_THAN(@"6")) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        _label.textAlignment = UITextAlignmentCenter;
-        _label.lineBreakMode = UILineBreakModeWordWrap;
+        _label.textAlignment = UITextAlignmentLeft;
+        _label.lineBreakMode = UILineBreakModeTailTruncation;
 #pragma clang diagnostic pop
     } else {
-        _label.textAlignment = NSTextAlignmentCenter;
-        _label.lineBreakMode = NSLineBreakByWordWrapping;
+        _label.textAlignment = NSTextAlignmentLeft;
+        _label.lineBreakMode = NSLineBreakByTruncatingTail;
     }
 
-    _label.numberOfLines = 0;
+    _label.numberOfLines = 4;
     _label.textColor = [UIColor whiteColor];
     if (SYSTEM_VERSION_LESS_THAN(@"7")) {
         // Shadow on 6 and below
         _label.shadowColor = [UIColor blackColor];
         _label.shadowOffset = CGSizeMake(1, 1);
     }
-    _label.font = [UIFont systemFontOfSize:17];
+    _label.font = [UIFont systemFontOfSize:15];
     if ([_photo respondsToSelector:@selector(caption)]) {
-        _label.text = [_photo caption] ? [_photo caption] : @" ";
+        _label.text = [_photo caption];
     }
+    [_label sizeToFit];
     [self addSubview:_label];
+    
 }
-
 
 @end

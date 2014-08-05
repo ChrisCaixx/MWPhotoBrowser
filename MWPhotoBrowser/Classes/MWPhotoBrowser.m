@@ -370,7 +370,7 @@
             [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleBlackTranslucent animated:animated];
 #pragma clang diagnostic push
         } else {
-            [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleDefault animated:animated];
+            [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent animated:animated];
         }
     }
     
@@ -379,6 +379,10 @@
         [self storePreviousNavBarAppearance];
     }
     [self setNavBarAppearance:animated];
+    
+    // Hide navigation controller's toolbar
+    _previousNavToolbarHidden = self.navigationController.toolbarHidden;
+    [self.navigationController setToolbarHidden:YES];
     
     // Update UI
 	[self hideControlsAfterDelay];
@@ -421,6 +425,9 @@
         [[UIApplication sharedApplication] setStatusBarStyle:_previousStatusBarStyle animated:animated];
     }
     
+    // Show navigation controller's toolbar
+    [self.navigationController setToolbarHidden:_previousNavToolbarHidden];
+    
 	// Super
 	[super viewWillDisappear:animated];
     
@@ -429,6 +436,8 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     _viewIsActive = YES;
+    
+//    [self setControlsHidden:YES animated:NO permanent:NO];
 }
 
 - (void)willMoveToParentViewController:(UIViewController *)parent {
@@ -454,8 +463,8 @@
     navBar.translucent = YES;
     navBar.barStyle = UIBarStyleBlackTranslucent;
     if ([[UINavigationBar class] respondsToSelector:@selector(appearance)]) {
-        [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsDefault];
-        [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsLandscapePhone];
+//        [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsDefault];
+//        [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsLandscapePhone];
     }
 }
 
@@ -564,8 +573,14 @@
 }
 
 - (NSUInteger)supportedInterfaceOrientations {
-    return UIInterfaceOrientationMaskAll;
+    return UIInterfaceOrientationMaskAllButUpsideDown;
 }
+
+- (BOOL)shouldAutorotate
+{
+    return YES;
+}
+
 
 - (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
     
@@ -1046,7 +1061,7 @@
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
 	// Hide controls when dragging begins
-	[self setControlsHidden:YES animated:YES permanent:NO];
+//	[self setControlsHidden:YES animated:YES permanent:NO];
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
@@ -1078,7 +1093,9 @@
         } else {
             self.title = [NSString stringWithFormat:@"%lu %@ %lu", (unsigned long)(_currentPageIndex+1), NSLocalizedString(@"of", @"Used in the context: 'Showing 1 of 3 items'"), (unsigned long)numberOfPhotos];
         }
-	} else {
+	} else if (numberOfPhotos == 1) {
+        self.title = [NSString stringWithFormat:@"%lu %@ %lu", (unsigned long)(_currentPageIndex+1), NSLocalizedString(@"of", @"Used in the context: 'Showing 1 of 3 items'"), (unsigned long)numberOfPhotos];
+    } else {
 		self.title = nil;
 	}
 	
@@ -1143,7 +1160,7 @@
 
 - (void)showGrid:(BOOL)animated {
 
-    if (_gridController) return;
+//    if (_gridController) return;
     
     // Init grid controller
     _gridController = [[MWGridViewController alloc] init];
@@ -1151,7 +1168,7 @@
     _gridController.browser = self;
     _gridController.selectionMode = _displaySelectionButtons;
     _gridController.view.frame = self.view.bounds;
-    _gridController.view.frame = CGRectOffset(_gridController.view.frame, 0, (self.startOnGrid ? -1 : 1) * self.view.bounds.size.height);
+    _gridController.view.frame = CGRectOffset(_gridController.view.frame, 0, self.view.bounds.size.height);
 
     // Stop specific layout being triggered
     _skipNextPagingScrollViewPositioning = YES;
@@ -1176,7 +1193,7 @@
     [UIView animateWithDuration:animated ? 0.3 : 0 animations:^(void) {
         _gridController.view.frame = self.view.bounds;
         CGRect newPagingFrame = [self frameForPagingScrollView];
-        newPagingFrame = CGRectOffset(newPagingFrame, 0, (self.startOnGrid ? 1 : -1) * newPagingFrame.size.height);
+        newPagingFrame = CGRectOffset(newPagingFrame, 0, -newPagingFrame.size.height);
         _pagingScrollView.frame = newPagingFrame;
     } completion:^(BOOL finished) {
         [_gridController didMoveToParentViewController:self];
@@ -1198,7 +1215,7 @@
     
     // Position prior to hide animation
     CGRect newPagingFrame = [self frameForPagingScrollView];
-    newPagingFrame = CGRectOffset(newPagingFrame, 0, (self.startOnGrid ? 1 : -1) * newPagingFrame.size.height);
+    newPagingFrame = CGRectOffset(newPagingFrame, 0, -newPagingFrame.size.height);
     _pagingScrollView.frame = newPagingFrame;
     
     // Remember and remove controller now so things can detect a nil grid controller
@@ -1211,7 +1228,7 @@
     
     // Animate, hide grid and show paging scroll view
     [UIView animateWithDuration:0.3 animations:^{
-        tmpGridController.view.frame = CGRectOffset(self.view.bounds, 0, (self.startOnGrid ? -1 : 1) * self.view.bounds.size.height);
+        tmpGridController.view.frame = CGRectOffset(self.view.bounds, 0, self.view.bounds.size.height);
         _pagingScrollView.frame = [self frameForPagingScrollView];
     } completion:^(BOOL finished) {
         [tmpGridController willMoveToParentViewController:nil];
@@ -1388,6 +1405,8 @@
 
 // Enable/disable control visiblity timer
 - (void)hideControlsAfterDelay {
+    return;
+    //modify by Surc @2014_05_26, 取消自动隐藏的定时器
 	if (![self areControlsHidden]) {
         [self cancelControlHiding];
 		_controlVisibilityTimer = [NSTimer scheduledTimerWithTimeInterval:self.delayToHideElements target:self selector:@selector(hideControls) userInfo:nil repeats:NO];
@@ -1427,17 +1446,6 @@
 - (void)doneButtonPressed:(id)sender {
     // Only if we're modal and there's a done button
     if (_doneButton) {
-        // See if we actually just want to show/hide grid
-        if (self.enableGrid) {
-            if (self.startOnGrid && !_gridController) {
-                [self showGrid:YES];
-                return;
-            } else if (!self.startOnGrid && _gridController) {
-                [self hideGrid];
-                return;
-            }
-        }
-        // Dismiss view controller
         if ([_delegate respondsToSelector:@selector(photoBrowserDidFinishModalPresentation:)]) {
             // Call delegate method and let them dismiss us
             [_delegate photoBrowserDidFinishModalPresentation:self];

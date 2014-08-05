@@ -58,6 +58,9 @@
 // Return nil to display no caption
 - (NSString *)caption;
 
+- (NSString *)timeString;
+- (NSString *)address;
+
 // Cancel any background loading of image data
 - (void)cancelAnyLoading;
 
