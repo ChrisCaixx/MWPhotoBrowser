@@ -10,13 +10,15 @@
 #import "MWCaptionView.h"
 #import "MWPhoto.h"
 
-static const CGFloat labelPadding = 10;
+static const CGFloat   labelPadding = 4;
+static const NSInteger numberOfLinesToShow = 4;
 
 // Private
 @interface MWCaptionView () {
     id <MWPhoto> _photo;
     UILabel *_label;
     UILabel *_timeAdressLabel;
+    UIScrollView *_containScrollView;
 }
 @end
 
@@ -25,7 +27,7 @@ static const CGFloat labelPadding = 10;
 - (id)initWithPhoto:(id<MWPhoto>)photo {
     self = [super initWithFrame:CGRectMake(0, 0, 320, 44)]; // Random initial frame
     if (self) {
-        self.userInteractionEnabled = NO;
+        self.userInteractionEnabled = YES;
         _photo = photo;
         if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
             // Use iOS 7 blurry goodness
@@ -52,9 +54,10 @@ static const CGFloat labelPadding = 10;
 }
 
 - (CGSize)sizeThatFits:(CGSize)size {
-    CGFloat maxHeight = 9999;
-    if (_label.numberOfLines > 0) maxHeight = _label.font.leading*_label.numberOfLines;
-    
+//    CGFloat maxHeight = 9999;
+//    if (_label.numberOfLines > 0) maxHeight = _label.font.leading*_label.numberOfLines;
+    CGFloat maxHeight = numberOfLinesToShow * _label.font.leading;
+
     CGSize timeAddressSize;
     if ([NSString instancesRespondToSelector:@selector(boundingRectWithSize:options:attributes:context:)]) {
         timeAddressSize = [_timeAdressLabel.text boundingRectWithSize:CGSizeMake(size.width - labelPadding*2, maxHeight)
@@ -128,7 +131,7 @@ static const CGFloat labelPadding = 10;
     }
     
     _timeAdressLabel.text = timeAddress;
-    [self addSubview:_timeAdressLabel];
+//    [self addSubview:_timeAdressLabel];
     [_timeAdressLabel sizeToFit];
     
     if (timeAddress.length) {
@@ -155,7 +158,7 @@ static const CGFloat labelPadding = 10;
         _label.lineBreakMode = NSLineBreakByTruncatingTail;
     }
 
-    _label.numberOfLines = 4;
+    _label.numberOfLines = 0;
     _label.textColor = [UIColor whiteColor];
     if (SYSTEM_VERSION_LESS_THAN(@"7")) {
         // Shadow on 6 and below
@@ -167,8 +170,15 @@ static const CGFloat labelPadding = 10;
         _label.text = [_photo caption];
     }
     [_label sizeToFit];
-    [self addSubview:_label];
+//    [self addSubview:_label];
     
+    _containScrollView = [[UIScrollView alloc] initWithFrame:self.bounds];
+    _containScrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self addSubview:_containScrollView];
+    
+    [_containScrollView addSubview:_timeAdressLabel];
+    [_containScrollView addSubview:_label];
+    [_containScrollView setContentSize:CGSizeMake(0, CGRectGetMaxY(_label.frame))];
 }
 
 @end
