@@ -437,7 +437,18 @@
     [super viewDidAppear:animated];
     _viewIsActive = YES;
     
-//    [self setControlsHidden:YES animated:NO permanent:NO];
+    if (self.showsNavigationBarAnimated) {
+        [self setControlsHidden:YES animated:NO permanent:NO];
+        if (self.showsNavigationBarWhenShown) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05f * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self setControlsHidden:NO animated:YES permanent:NO];
+            });
+        }
+    } else {
+        if (!self.showsNavigationBarWhenShown) {
+            [self setControlsHidden:YES animated:NO permanent:NO];
+        }
+    }
 }
 
 - (void)willMoveToParentViewController:(UIViewController *)parent {
