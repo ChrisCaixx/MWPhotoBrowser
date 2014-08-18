@@ -394,6 +394,8 @@
         }
         _viewHasAppearedInitially = YES;
     }
+    
+    self.navigationController.navigationBar.hidden = YES;
 
 }
 
@@ -1270,7 +1272,7 @@
             if (!_isVCBasedStatusBarAppearance) {
                 
                 // Non-view controller based
-                [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:animated ? UIStatusBarAnimationSlide : UIStatusBarAnimationNone];
+//                [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
                 
             } else {
                 
@@ -1302,7 +1304,7 @@
                 }
                 
                 // Status Bar
-                [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:animated?UIStatusBarAnimationFade:UIStatusBarAnimationNone];
+//                [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
                 
                 // Get status bar height if visible
                 if (![UIApplication sharedApplication].statusBarHidden) {
@@ -1423,9 +1425,14 @@
 - (void)toggleControls
 {
 //    [self setControlsHidden:![self areControlsHidden] animated:YES permanent:NO];
-    if ([self.delegate respondsToSelector:@selector(photoBrowserDidFinishModalPresentation:)]) {
-        [self.delegate photoBrowserDidFinishModalPresentation:self];
-    }
+    
+//    [UIApplication sharedApplication].statusBarHidden = NO;
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(.0f * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if ([self.delegate respondsToSelector:@selector(photoBrowserDidFinishModalPresentation:)]) {
+            [self.delegate photoBrowserDidFinishModalPresentation:self];
+        }
+    });
 }
 
 #pragma mark - Properties
