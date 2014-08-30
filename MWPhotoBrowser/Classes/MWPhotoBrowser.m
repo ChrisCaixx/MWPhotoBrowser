@@ -712,7 +712,9 @@
     } else {
         id <MWPhoto> photo = [self photoAtIndex:index];
         if ([photo respondsToSelector:@selector(caption)]) {
-            if ([photo caption]) captionView = [[MWCaptionView alloc] initWithPhoto:photo];
+            if ([photo caption]) captionView = ({
+                self.captainViewBuilder == nil ? [[MWCaptionView alloc] initWithPhoto:photo] : self.captainViewBuilder(photo);
+            });
         }
     }
     captionView.alpha = [self areControlsHidden] ? 0 : 1; // Initial alpha

@@ -68,4 +68,6 @@
 - (void)showNextPhotoAnimated:(BOOL)animated;
 - (void)showPreviousPhotoAnimated:(BOOL)animated;
 
+@property (nonatomic, copy) MWCaptionView *(^captainViewBuilder)(id<MWPhoto> photo);
+
 @end
