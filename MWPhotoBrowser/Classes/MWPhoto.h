@@ -18,6 +18,11 @@
 @property (nonatomic, strong) NSString *caption;
 @property (nonatomic, strong) NSString *timeString;
 @property (nonatomic, strong) NSString *address;
+@property (nonatomic, strong) NSString *tagString;
+@property (nonatomic, strong) NSString *priceString;
+@property (nonatomic, assign) NSInteger commentNum;
+@property (nonatomic, assign) NSInteger upNum;
+//@property (nonatomic, assign) NSInteger forwardNumber;
 @property (nonatomic, readonly) UIImage *image;
 @property (nonatomic, readonly) NSURL *photoURL;
 @property (nonatomic, readonly) NSString *filePath  __attribute__((deprecated("Use photoURL"))); // Depreciated
