@@ -15,7 +15,7 @@ static const NSInteger numberOfLinesToShow = 4;
 
 // Private
 @interface MWCaptionView () {
-    id <MWPhoto> _photo;
+//    id <MWPhoto> _photo;
     UILabel *_label;
     UILabel *_timeAdressLabel;
     UIScrollView *_containScrollView;

@@ -8,8 +8,11 @@
 
 #import <UIKit/UIKit.h>
 #import "MWPhotoProtocol.h"
+#import "MWPhoto.h"
 
 @interface MWCaptionView : UIToolbar
+
+@property (nonatomic, strong, readonly) MWPhoto * photo;
 
 // Init
 - (id)initWithPhoto:(id<MWPhoto>)photo;
